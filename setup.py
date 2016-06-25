@@ -3,7 +3,11 @@ Photo booth application for the Rapsberry Pi written in Python
 """
 from setuptools import find_packages, setup
 
-dependencies = ['click']
+dependencies = [
+        'click==6.6',
+        'Pillow==3.2.0',
+        'picamera==1.10'
+    ]
 
 setup(
     name='photoberry',
