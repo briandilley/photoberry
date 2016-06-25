@@ -1,6 +1,6 @@
 
 import io
-import picamera
+
 
 class CameraController(object):
 
@@ -8,8 +8,10 @@ class CameraController(object):
         self._camera = None
 
     def __getattribute__(self, name):
+
         if name == 'camera':
             if not self._camera:
+                import picamera
                 self._camera = picamera.PiCamera()
             return self._camera
         else:
@@ -20,5 +22,3 @@ class CameraController(object):
             stream = io.BytesIO()
         self.camera.capture(stream, format='jpeg', resize=(640, 360))
         return stream
-
-controller = CameraController()

@@ -1,4 +1,11 @@
-*.iml
-.idea
 *.pyc
 
+dist/
+build/
+*.egg-info/
+
+.tox/
+.coverage
+
+.idea
+*.iml
