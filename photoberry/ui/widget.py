@@ -1,46 +1,4 @@
 
-import ctypes
-from logging import debug
-from picamera import bcm_host, mmal
-
-
-def normalize_dimension(dimension):
-    """
-    Normalizes a dimension so that it's width is a multiple of 32 and
-    it's height is a multiple of 16.
-    :param dimension:
-    :return:
-    """
-    if len(dimension) == 4:
-        return (
-            int(dimension[0]),
-            int(dimension[1]),
-            mmal.VCOS_ALIGN_UP(int(dimension[2]), 32),
-            mmal.VCOS_ALIGN_UP(int(dimension[3]), 16)
-        )
-    else:
-        return (
-            mmal.VCOS_ALIGN_UP(int(dimension[0]), 32),
-            mmal.VCOS_ALIGN_UP(int(dimension[1]), 16)
-        )
-
-
-def get_screen_resolution():
-    """
-    Returns the screen's resolution in (width, height)
-    :return: the resultion
-    """
-    w = ctypes.c_uint32()
-    h = ctypes.c_uint32()
-    if bcm_host.graphics_get_display_size(0, w, h) == -1:
-        w = 1280
-        h = 720
-    else:
-        w = int(w.value)
-        h = int(h.value)
-    return w, h
-
-
 class Widget(object):
     """
     A renderable widget
@@ -53,7 +11,6 @@ class Widget(object):
         self._visible = True
         self.children = list()
         self.background_color = None
-        self.dirty = True
         if parent:
             parent.add_child(self)
         if dimensions:
@@ -61,7 +18,7 @@ class Widget(object):
 
     def layout(self):
         """
-        Called whenever the wiget's dimensions change.
+        Called whenever the widget's dimensions change.
         """
         pass
 
@@ -72,7 +29,6 @@ class Widget(object):
         """
         self.children.append(child)
         child.parent = self
-        self.dirty = True
 
     def remove_child(self, child):
         """
@@ -81,7 +37,6 @@ class Widget(object):
         """
         self.children.remove(child)
         child.parent = None
-        self.dirty = True
 
     def draw(self, canvas):
         """
@@ -91,16 +46,29 @@ class Widget(object):
         if not self.visible:
             return
         if self.background_color:
-            debug("drawing: %s", self.screen_dimensions)
             canvas.rectangle((
                 self.screen_dimensions[0],
                 self.screen_dimensions[1],
                 self.screen_dimensions[0] + self.screen_dimensions[2],
                 self.screen_dimensions[1] + self.screen_dimensions[3]
             ), fill=self.background_color)
+        self.do_draw(canvas)
         for child in self.children:
             child.draw(canvas)
-        self.dirty = False
+
+    def do_draw(self, canvas):
+        """
+        To be overridden by subclasses to draw themselves
+        :param canvas: the canvas
+        """
+        pass
+
+    @property
+    def screen_resolution(self):
+        if not self.parent:
+            return self.size
+        else:
+            return self.parent.screen_resolution
 
     @property
     def visible(self):
@@ -111,7 +79,6 @@ class Widget(object):
         if self._visible == visible:
             return
         self._visible = visible
-        self.dirty = True
 
     @property
     def parent(self):
@@ -125,7 +92,6 @@ class Widget(object):
         if self._parent == parent:
             return
         self._parent = parent
-        self.dirty = True
 
     @property
     def dimensions(self):
@@ -141,7 +107,6 @@ class Widget(object):
             return
         self._dimensions = dimensions
         self.layout()
-        self.dirty = True
 
     @property
     def screen_dimensions(self):
@@ -196,8 +161,8 @@ class Widget(object):
             return self.location
 
         return (
-            self.location[0] + self.parent.screen_location,
-            self.location[1] + self.parent.screen_location
+            self.location[0] + self.parent.screen_location[0],
+            self.location[1] + self.parent.screen_location[1]
         )
 
     @location.setter

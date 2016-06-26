@@ -4,6 +4,7 @@ import picamera
 
 from time import sleep
 
+
 class CameraController(object):
 
     def __init__(self):

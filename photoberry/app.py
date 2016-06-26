@@ -25,11 +25,6 @@ class PhotoBerryApplication(object):
         Starts the application.  This method blocks until the application is stopped.
         """
 
-        warning("warning")
-        debug("debug")
-        error("error")
-        info("info")
-
         info("creating camera")
         self.camera_controller = CameraController()
         self.camera_controller.camera.resolution = photo_resolution
@@ -96,4 +91,12 @@ class PhotoBerryApplication(object):
             self.normalized_screen_resolution[1]
         ))
         interface_frame.background_color = ImageColor.getcolor('#0000ff', 'RGB')
+
+        number = ui.LabelWidget("ballsagna", parent=interface_frame, align="center")
+        number.dimensions = (
+            0,
+            0,
+            interface_frame.width,
+            interface_frame.height
+        )
 
