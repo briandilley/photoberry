@@ -1,8 +1,7 @@
+
 import click
-
-from photoberry import PhotoBerryApplication
-
 import logging
+
 logging.basicConfig(format='[%(asctime)s] %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
 
 
@@ -20,5 +19,6 @@ def main(photo_resolution, debug):
     else:
         logger.setLevel(logging.INFO)
 
+    from photoberry import PhotoBerryApplication
     app = PhotoBerryApplication()
     app.run(photo_resolution)

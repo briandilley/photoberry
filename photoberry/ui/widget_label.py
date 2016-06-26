@@ -8,7 +8,6 @@ from . import Widget
 assets_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)),  "../assets")
 fonts_dir = os.path.join(assets_dir, "fonts")
 default_font = os.path.join(fonts_dir, "Roboto-Medium.ttf")
-error("default_font: %s", default_font)
 
 
 class LabelWidget(Widget):
