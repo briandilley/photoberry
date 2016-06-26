@@ -1,5 +1,4 @@
 
-from logging import debug, error
 import os
 from PIL import ImageFont
 

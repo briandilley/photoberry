@@ -1,7 +1,5 @@
 
 import ctypes
-from logging import warning, debug, error, info
-import os
 from picamera import bcm_host, mmal
 
 from .widget import Widget
