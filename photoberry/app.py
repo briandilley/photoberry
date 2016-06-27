@@ -1,7 +1,7 @@
 
 from logging import warning, debug, error, info
 import os
-from PIL import Image, ImageColor, ImageDraw
+from PIL import Image, ImageColor, ImageDraw, ImageFilter
 import random
 import subprocess
 import threading
@@ -219,10 +219,11 @@ class PhotoBerryApplication(object):
         Creates a strip and uploads it to twitter.
         """
         if self._twitter:
-            strip_file = self.create_strip()
+            strip_file = self.create_strip(resolution_ratio=0.5)
             f = open(strip_file)
             self._twitter.request('statuses/update_with_media', {'status': self._twitter_text}, {'media[]': f.read()})
             f.close()
+            os.remove(strip_file)
 
     def _enter_state(self, state):
         """
@@ -303,15 +304,18 @@ class PhotoBerryApplication(object):
             interface_frame.height - 10
         )
 
-    def create_strip(self):
+    def create_strip(self, resolution_ratio=None):
         """
         Combines the images in taken_photos into one
         :return: the combined image
         """
 
+        if not resolution_ratio:
+            resolution_ratio = self.strip_resolution_ratio
+
         padding = 40
-        photo_width = int(self.photo_resolution[0] * self.strip_resolution_ratio)
-        photo_height = int(self.photo_resolution[1] * self.strip_resolution_ratio)
+        photo_width = int(self.photo_resolution[0] * resolution_ratio)
+        photo_height = int(self.photo_resolution[1] * resolution_ratio)
         width = (photo_width * 2) + (padding * 4)
         height = (photo_height * self.picture_count) + (padding * (self.picture_count + 1))
 
@@ -322,7 +326,7 @@ class PhotoBerryApplication(object):
         for i in range(0, self.picture_count):
             image = Image.open(self.pictures_taken[i])
             image = image.convert(mode='RGB')
-            image = image.resize((photo_width, photo_height))
+            image = image.resize((photo_width, photo_height), resample=Image.LANCZOS)
             strip.paste(image, box=(
                 padding,
                 padding + (padding * i) + (photo_height * i)
@@ -332,6 +336,9 @@ class PhotoBerryApplication(object):
                 padding + (padding * i) + (photo_height * i)
             ))
             del image
+
+        strip = strip.filter(ImageFilter.DETAIL)
+        strip = strip.filter(ImageFilter.SHARPEN)
 
         (handle, file_name) = mkstemp(suffix='.jpg', prefix='photoberry-strip')
         os.close(handle)
