@@ -6,7 +6,8 @@ from setuptools import find_packages, setup
 dependencies = [
         'click==6.6',
         'Pillow==3.2.0',
-        'picamera==1.10'
+        'picamera==1.10',
+        'RPi.GPIO==0.6.2'
     ]
 
 setup(

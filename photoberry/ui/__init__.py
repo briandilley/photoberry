@@ -1,9 +1,36 @@
-
 import ctypes
+from time import sleep, time
+from logging import debug
 from picamera import bcm_host, mmal
 
 from .widget import Widget
 from .widget_label import LabelWidget
+from .constants import *
+
+
+class UIContext(object):
+    """
+    Does the main loop for the UI
+    """
+
+    def __init__(self, canvas, root, update_function=lambda x: 0):
+        self._canvas = canvas
+        self._update_function = update_function
+        self._root = root
+
+    def main_loop(self):
+        while self._update_function():
+            if self._root.dirty:
+
+                # start = time()
+                self._root.layout(self._canvas)
+                # debug("layout time: %s", time() - start)
+
+                # start = time()
+                self._root.draw(self._canvas)
+                # debug("draw time: %s", time() - start)
+
+            sleep(0.06)
 
 
 def normalize_dimension(dimension):

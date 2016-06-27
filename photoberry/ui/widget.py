@@ -4,11 +4,13 @@ class Widget(object):
     A renderable widget
     """
 
-    def __init__(self, parent=None, dimensions=None):
+    def __init__(self, name=None, parent=None, dimensions=None):
         super(Widget, self).__init__()
         self._parent = None
         self._dimensions = (0, 0, 0, 0)
         self._visible = True
+        self._dirty = True
+        self.name = name
         self.children = list()
         self.background_color = None
         if parent:
@@ -16,27 +18,47 @@ class Widget(object):
         if dimensions:
             self.dimensions = dimensions
 
-    def layout(self):
+    def do_layout(self, canvas):
         """
-        Called whenever the widget's dimensions change.
+        To be overridden by subclasses to lay themselves out
+        :param canvas: the canvas
         """
         pass
 
-    def add_child(self, child):
+    def do_draw(self, canvas):
         """
-        Adds a child widget
-        :param child: the child to add
+        To be overridden by subclasses to draw themselves
+        :param canvas: the canvas
         """
-        self.children.append(child)
-        child.parent = self
+        pass
 
-    def remove_child(self, child):
+    def layout(self, canvas):
         """
-        Removes a child widget.  Raises ValueError if the child was not present
-        :param child: the child to remove
+        Called when the widget needs to lay itself out
         """
-        self.children.remove(child)
-        child.parent = None
+        if not self.visible:
+            return
+        self.do_layout(canvas)
+        self._dirty = False
+        for child in self.children:
+            child.layout(canvas)
+
+    def find_by_name(self, name):
+        """
+        Finds a widget by name.
+        :param name: the name
+        :return: the widget, or None if not found
+        """
+        if self.name == name:
+            return self
+        for child in self.children:
+            if child.name == name:
+                return child
+        for child in self.children:
+            ret = child.find_by_name(name)
+            if ret:
+                return ret
+        return None
 
     def draw(self, canvas):
         """
@@ -56,29 +78,84 @@ class Widget(object):
         for child in self.children:
             child.draw(canvas)
 
-    def do_draw(self, canvas):
+    def invalidate(self):
         """
-        To be overridden by subclasses to draw themselves
-        :param canvas: the canvas
+        Marks this widget as invalid which causes it to be re layed out and drawn.
         """
-        pass
+        self._dirty = True
+
+    def add_child(self, child):
+        """
+        Adds a child widget
+        :param child: the child to add
+        """
+        self.children.append(child)
+        child.parent = self
+        self.invalidate()
+
+    def remove_child(self, child):
+        """
+        Removes a child widget.  Raises ValueError if the child was not present
+        :param child: the child to remove
+        """
+        self.children.remove(child)
+        child.parent = None
+        self.invalidate()
 
     @property
-    def screen_resolution(self):
-        if not self.parent:
-            return self.size
-        else:
-            return self.parent.screen_resolution
+    def dirty(self):
+        """
+        Indicates whether or not this widget has been invalidated and is considered
+        to be a dirty, dirty... dirty little girl.
+        :return: True if invalid
+        """
+        if self._dirty:
+            return True
+        for child in self.children:
+            if child.dirty:
+                return True
+        return False
+
+    @property
+    def root(self):
+        """
+        Returns the root widget in this widget's hierarchy.
+        :return: the root widget
+        """
+        return self.root if self.parent else self
 
     @property
     def visible(self):
+        """
+        Indicates wheter or not this widget is visible.
+        """
         return self._visible
 
     @visible.setter
     def visible(self, visible):
+        """
+        Sets this widget's visibility
+        :param visible: the visibility
+        """
         if self._visible == visible:
             return
         self._visible = visible
+        self.invalidate()
+
+    @property
+    def name(self):
+        """
+        The Widget's name
+        """
+        return self._name
+
+    @name.setter
+    def name(self, name):
+        """
+        Sets the widget's name
+        :param parent: the name
+        """
+        self._name = name
 
     @property
     def parent(self):
@@ -89,9 +166,14 @@ class Widget(object):
 
     @parent.setter
     def parent(self, parent):
+        """
+        Sets the widget's parent
+        :param parent: the parent
+        """
         if self._parent == parent:
             return
         self._parent = parent
+        self.invalidate()
 
     @property
     def dimensions(self):
@@ -102,11 +184,15 @@ class Widget(object):
 
     @dimensions.setter
     def dimensions(self, dimensions):
+        """
+        Sets the widgets dimensions.
+        :param dimensions: the dimensions
+        """
         dimensions = (int(dimensions[0]), int(dimensions[1]), int(dimensions[2]), int(dimensions[3]))
         if self._dimensions == dimensions:
             return
         self._dimensions = dimensions
-        self.layout()
+        self.invalidate()
 
     @property
     def screen_dimensions(self):
@@ -125,6 +211,10 @@ class Widget(object):
 
     @screen_dimensions.setter
     def screen_dimensions(self, dimensions):
+        """
+        Sets the widget's dimensions using the screen dimensions.
+        :param dimensions: the dimensions
+        """
         if not self.parent:
             self.dimensions = dimensions
             return
@@ -143,7 +233,12 @@ class Widget(object):
 
     @size.setter
     def size(self, size):
+        """
+        Sets thew size (width, height) of the widget
+        :param size:  the size
+        """
         self.dimensions = (self.x, self.y, size[0], size[1])
+        self.invalidate()
 
     @property
     def location(self):
@@ -167,7 +262,12 @@ class Widget(object):
 
     @location.setter
     def location(self, location):
+        """
+        Sets the location of the widget (x, y)
+        :param location: the location
+        """
         self.dimensions = (location[0], location[1], self.width, self.height)
+        self.invalidate()
 
     @property
     def x(self):
@@ -187,14 +287,22 @@ class Widget(object):
 
     @x.setter
     def x(self, x):
+        """
+        Sets the x coordinate of the widget
+        :param x: the x
+        """
         self.dimensions = (
             x,
             self.dimensions[1],
             self.dimensions[2],
             self.dimensions[3])
+        self.invalidate()
 
     @property
     def y(self):
+        """
+        The `y` coordinate of the widget
+        """
         return self.dimensions[1]
 
     @property
@@ -216,6 +324,7 @@ class Widget(object):
             y,
             self.dimensions[2],
             self.dimensions[3])
+        self.invalidate()
 
     @property
     def width(self):
@@ -226,11 +335,15 @@ class Widget(object):
 
     @width.setter
     def width(self, width):
+        """
+        Sets the `width` of the widget
+        """
         self.dimensions = (
             self.dimensions[0],
             self.dimensions[1],
             width,
             self.dimensions[3])
+        self.invalidate()
 
     @property
     def height(self):
@@ -241,8 +354,12 @@ class Widget(object):
 
     @height.setter
     def height(self, height):
+        """
+        Sets the `height` of the widget
+        """
         self.dimensions = (
             self.dimensions[0],
             self.dimensions[1],
             self.dimensions[2],
             height)
+        self.invalidate()

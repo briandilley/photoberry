@@ -1,12 +1,9 @@
 
-import os
+from logging import debug
 from PIL import ImageFont
 
-from . import Widget
-
-assets_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)),  "../assets")
-fonts_dir = os.path.join(assets_dir, "fonts")
-default_font = os.path.join(fonts_dir, "Roboto-Medium.ttf")
+from .widget import Widget
+from .constants import default_font
 
 
 class LabelWidget(Widget):
@@ -16,11 +13,12 @@ class LabelWidget(Widget):
 
     def __init__(self, text,
                  font_name=default_font,
-                 font_color=(255, 0, 0, 255),
+                 font_color=(0, 0, 0, 255),
                  align="left",
+                 name=None,
                  parent=None,
                  dimensions=None):
-        super(LabelWidget, self).__init__(parent=parent, dimensions=dimensions)
+        super(LabelWidget, self).__init__(name=name, parent=parent, dimensions=dimensions)
         self._text = text
         self._font_name = font_name
         self._align = align
@@ -29,26 +27,26 @@ class LabelWidget(Widget):
         self._font = None
         self._box_size = None
 
-    def _find_font_size(self, canvas):
-        font_size = 1
-        font = ImageFont.truetype(self.font_name, font_size)
-        box_size = canvas.textsize(self.text, font=font)
-        while True:
-            new_font = ImageFont.truetype(self.font_name, font_size)
-            new_box_size = canvas.textsize(self.text, font=new_font)
-            if new_box_size[0] > self.width or new_box_size[1] > self.height:
+    def do_layout(self, canvas):
+        min = 1
+        max = 1024
+        current = -1
+        while min != max:
+            current = min + (max - min) / 2
+            if current == min or current == max:
                 break
-            font_size += 1
-            font = new_font
-            box_size = new_box_size
+            font = ImageFont.truetype(self.font_name, current)
+            box_size = canvas.textsize(self.text, font=font)
+            if box_size[0] > self.width or box_size[1] > self.height:
+                max = current
+            else:
+                min = current
 
-        self._font_size = font_size
-        self._font = font
-        self._box_size = box_size
+        self._font_size = current
+        self._font = ImageFont.truetype(self.font_name, self._font_size)
+        self._box_size = canvas.textsize(self.text, font=self._font)
 
     def do_draw(self, canvas):
-        if self._font_size == -1:
-            self._find_font_size(canvas)
         canvas.text((
                 self.screen_x + ((self.width / 2) - (self._box_size[0] / 2)),
                 self.screen_y + ((self.height / 2) - (self._box_size[1] / 2))
@@ -63,7 +61,18 @@ class LabelWidget(Widget):
         if text == self._text:
             return
         self._text = text
-        self._font_size = -1
+        self.invalidate()
+
+    @property
+    def font_color(self):
+        return self._font_color
+
+    @font_color.setter
+    def font_color(self, font_color):
+        if font_color == self.font_color:
+            return
+        self._font_color = font_color
+        self.invalidate()
 
     @property
     def font_name(self):
@@ -76,7 +85,7 @@ class LabelWidget(Widget):
         elif font_name == self._font_name:
             return
         self._font_name = font_name
-        self._font_size = -1
+        self.invalidate()
 
     @property
     def font_size(self):
@@ -85,6 +94,7 @@ class LabelWidget(Widget):
     @font_size.setter
     def font_size(self, font_size):
         self._font_size = font_size
+        self.invalidate()
 
     @property
     def align(self):
@@ -93,4 +103,5 @@ class LabelWidget(Widget):
     @align.setter
     def align(self, align):
         self._align = align
+        self.invalidate()
 
