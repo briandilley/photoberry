@@ -7,7 +7,8 @@ dependencies = [
         'click==6.6',
         'Pillow==3.2.0',
         'picamera==1.10',
-        'RPi.GPIO==0.6.2'
+        'RPi.GPIO==0.6.2',
+        'TwitterAPI==2.4.1'
     ]
 
 setup(

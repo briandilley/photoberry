@@ -1,6 +1,8 @@
 
-import io
+import os
 import picamera
+from shutil import rmtree
+from tempfile import mkstemp, mkdtemp
 
 from time import sleep
 
@@ -11,6 +13,8 @@ class CameraController(object):
         self._camera = None
         self.preview_renderer = None
         self.camera = picamera.PiCamera()
+        self.work_dir = None
+        self.clear_workdir()
 
     def start_preview(self, **options):
         """
@@ -34,6 +38,7 @@ class CameraController(object):
     def add_overlay(self, source, size=None, **options):
         """
         Adds an overlay
+        :param source: the source
         :param options: See :meth:`~picamera.camera.PiCamera.add_overlay`
         :param size: See :meth:`~picamera.camera.PiCamera.add_overlay`
         """
@@ -51,16 +56,23 @@ class CameraController(object):
 
         return overlay
 
-    def read_photo_frame(self, stream=None):
+    def clear_workdir(self):
         """
-        Reads an image from the camera.  The data can be written to the stream
-        provided, or a new stream is created and returnd.
-
-        :param stream: An optional :class:BytesIO to write the image data to.
-        :return: a :class:`~BytesIO`
+        Deletes all files in the working directory
         """
+        if self.work_dir and os.path.exists(self.work_dir):
+            rmtree(self.work_dir, ignore_errors=True)
+        self.work_dir = mkdtemp('work', 'photoberry')
+        return self.work_dir
 
-        if not stream:
-            stream = io.BytesIO()
-        self.camera.capture(stream, format='jpeg', resize=(640, 360))
-        return stream
+    def capture_photo(self):
+        """
+        Captures a photo to a temporary file in the working directory
+        :return: the file
+        """
+        (handle, file_name) = mkstemp(suffix='.jpg', prefix='photoberry-temp', dir=self.work_dir)
+        os.close(handle)
+        handle = open(file_name, 'wb')
+        self.camera.capture(handle, format='jpeg', quality=100)
+        handle.close()
+        return file_name
