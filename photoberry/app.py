@@ -149,7 +149,7 @@ class PhotoBerryApplication(object):
             self.render_timer.start()
 
         if self.state == STATE_DEFAULT:
-            if no and not self.disable_quit:
+            if (no and not self.disable_quit) or (no and yes):
                 self._enter_state(STATE_EXIT_PROMPT)
             elif yes:
                 self._enter_state(STATE_PREPARE)
@@ -337,6 +337,7 @@ class PhotoBerryApplication(object):
             ))
             del image
 
+        strip = strip.transpose(Image.FLIP_LEFT_RIGHT)
         strip = strip.filter(ImageFilter.DETAIL)
         strip = strip.filter(ImageFilter.SHARPEN)
 

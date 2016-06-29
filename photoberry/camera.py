@@ -12,9 +12,9 @@ class CameraController(object):
     def __init__(self):
         self._camera = None
         self.preview_renderer = None
-        self.camera = picamera.PiCamera()
         self.work_dir = None
         self.clear_workdir()
+        self.camera = picamera.PiCamera()
 
     def start_preview(self, **options):
         """
@@ -22,6 +22,7 @@ class CameraController(object):
         :param options: See :meth:`~picamera.camera.PiCamera.start_preview`
         """
 
+        self.camera.rotation = 180
         self.preview_renderer = self.camera.start_preview(**options)
 
         wait = 0
