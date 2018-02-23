@@ -39,7 +39,7 @@ class PhotoBerryApplication(object):
     """The application object is"""
 
     def __init__(self, photo_resolution, strip_resolution_ratio, yes_pin, no_pin, print_command,
-                 twitter_credentials=None,
+                 twitter_credentials=None, twitter_disable_banner=False,
                  disable_quit=False):
         self.photo_resolution = photo_resolution
         self.yes_pin = yes_pin
@@ -67,6 +67,7 @@ class PhotoBerryApplication(object):
         self.pictures_taken = list()
 
         self._twitter = None
+        self.twitter_disable_banner = twitter_disable_banner
         if twitter_credentials:
             self._twitter_text = twitter_credentials.text
             self._twitter = TwitterAPI(
@@ -261,7 +262,7 @@ class PhotoBerryApplication(object):
 
         elif state == STATE_COMPLETED:
             text = "Thank You!"
-            if self._twitter:
+            if self._twitter and not self.twitter_disable_banner:
                 text = text + "\nSee your photos at\n@" + self._twitter_username + "\non twitter!"
             self.window.find_by_name(NAME_GET_STARTED).text = text
             self.countdown_timer.start(10)

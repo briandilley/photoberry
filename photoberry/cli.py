@@ -24,11 +24,13 @@ default_print_command = 'lpr ' \
 @click.option('--twitter-access-token-key', nargs=1, type=str)
 @click.option('--twitter-access-token-secret', nargs=1, type=str)
 @click.option('--twitter-text', nargs=1, type=str, default="Created and uploaded with #photoberry")
+@click.option('--twitter-disable-banner', is_flag=True, default=False)
 @click.option('--disable-quit', is_flag=True)
 @click.option('--debug', is_flag=True)
 def main(photo_resolution, strip_resolution_ratio, debug, yes_gpio_pin, no_gpio_pin, print_command,
          twitter_consumer_key, twitter_consumer_secret, twitter_access_token_key, twitter_access_token_secret,
          twitter_text,
+         twitter_disable_banner,
          disable_quit):
     """
     Photo booth application for the Rapsberry Pi written in Python
@@ -50,6 +52,7 @@ def main(photo_resolution, strip_resolution_ratio, debug, yes_gpio_pin, no_gpio_
             twitter_consumer_secret,
             twitter_access_token_key,
             twitter_access_token_secret,
-            twitter_text))
+            twitter_text),
+        twitter_disable_banner=twitter_disable_banner)
 
     app.run()
